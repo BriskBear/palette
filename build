@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+require_relative 'lib/colors'
+require_relative 'lib/stubs'
+
+# Independent Instance Variables
+@leaf = ARGV[0]  # The first argument (filename)
+begin
+  raw  = File.read(@leaf)
+
+  # Dependent Instance Variables
+  color_lines = File.readlines(@leaf).select{|l| l.downcase.match?(/color/)}
+  @colors      = color_lines.map{|l| l.split(/:\s/)[-1].split(/;/)[0]}
+  @colors.delete('inherit')
+
+rescue TypeError => e
+  puts "Usage: build <css_file>"
+  begin
+    IRB.nil?
+
+    nil
+  rescue NameError => e
+    exit 1
+  end
+end
+
+def closest_square(num)
+  @squares = [*1..16].map{|s| s * s}
+
+  previous = 256
+  @squares.each_with_index do |s, sdx|
+    diff = (num - s).abs
+
+    return @squares[sdx - 1] if diff > previous
+
+    previous = diff
+  end && @squares.last  # NOTE: if the loop completes then the last value is closest
+end
+
+def column_count
+  determine_cols(@colors.count).times.map{'auto'}.join(' ')
+end
+
+def determine_cols(num)
+  square = closest_square(num)
+  rough  = Math.sqrt(square).to_i
+
+  num > square ? rough + 1 : rough
+end
+
+def determine_rows(num)
+  Math.sqrt(closest_square(num))
+end
+
+initialize_stubs
+unless @colors.nil?
+  @colors.uniq!.sort!{|c, d| sort_luminance(c, d)}
+
+  @colors.each do |c|
+    @stubs[:cells] += @stubs[:raw][:cell].gsub(/BG_COLOR/, c)
+                                         .gsub(/FG_COLOR/, determine_fg(c))
+  end
+
+  File.write('assets/styles.css', @stubs[:raw][:style].gsub(/COLUMN_COUNT/, column_count), mode: 'wb')
+  File.write('index.html', @stubs[:raw][:grid].gsub(/CELLS/, @stubs[:cells]), mode: 'wb')
+end

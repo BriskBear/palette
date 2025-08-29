@@ -1,0 +1,15 @@
+body {
+  background-color: #000;
+}
+
+div.color-grid {
+  display: grid;
+  grid-template-columns: COLUMN_COUNT;
+}
+
+div.color-cell, div.color-grid > div {
+  font-size: 12;
+  font-weight: 520;
+  padding: 0.77em;
+  text-align: center;
+}
